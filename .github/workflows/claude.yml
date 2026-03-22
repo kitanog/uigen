@@ -45,7 +45,7 @@ jobs:
                 "args": [
                   "@playwright/mcp@latest",
                   "--allowed-origins",
-                  "localhost:3000;cdn.tailwindcss.com;esm.sh"
+                  "http://localhost:3000;https://cdn.tailwindcss.com;https://esm.sh"
                 ]
               }
             }
