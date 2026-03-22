@@ -41,11 +41,11 @@ Copy `.env.example` to `.env`. Two variables matter:
 
 ### Key Abstractions
 
-**VirtualFileSystem** (`src/lib/file-system.ts`): In-memory tree (`Map<path, FileNode>`). No files are written to disk. Serializes to JSON for database storage. The entry point for generated components is always `/App.jsx` or `/App.tsx`.
+**VirtualFileSystem** (`src/lib/file-system.ts`): In-memory tree (`Map<path, FileNode>`). No files are written to disk. Serializes to JSON for database storage. The entry point for generated components is always `/App.jsx` or `/App.tsx`. The `@/` import alias (used in generated code) maps to `src/`.
 
 **JSX Transformer** (`src/lib/transform/jsx-transformer.ts`): Babel-based pipeline that converts JSX/TSX → executable JS, strips CSS imports, detects missing dependencies, and produces an import map with CDN URLs so the iframe can run npm packages without a bundler.
 
-**Preview iframe** (`src/components/preview/PreviewFrame.tsx`): Sandboxed iframe that receives a generated HTML string containing the import map and blob-URL module graph. Hot-reloads on every file change.
+**Preview iframe** (`src/components/preview/PreviewFrame.tsx`): Sandboxed iframe that receives a generated HTML string containing the import map and blob-URL module graph. Hot-reloads on every file change. Entry point detection order: `/App.jsx` → `/App.tsx` → `/index.jsx` → first `.jsx` file found.
 
 **AI Tools** (`src/lib/tools/`): `str_replace_editor` and `file_manager` are the only tools Claude can call. They operate entirely on the in-memory VirtualFileSystem.
 
@@ -64,7 +64,15 @@ The database schema is defined in the `prisma/schema.prisma` file. Reference it 
 
 ### AI Model
 
-Default model is `claude-haiku-4-5`. Configured in `src/lib/provider.ts`. Falls back to a mock provider if `ANTHROPIC_API_KEY` is not set.
+Default model is `claude-haiku-4-5`. Configured in `src/lib/provider.ts`. Falls back to a mock provider if `ANTHROPIC_API_KEY` is not set. The mock generates static Counter/Form/Card examples with `maxSteps: 4` (production uses `maxSteps: 40`). The API route has a 120-second timeout (`maxDuration = 120` in `src/app/api/chat/route.ts`).
+
+### UI Layout
+
+`src/app/main-content.tsx` renders a resizable panel group: Chat panel (35%) on the left, and a tabbed Preview + Code editor (65%) on the right. The Code tab splits further into a file tree and Monaco editor.
+
+### Anonymous Sessions
+
+`src/lib/anon-work-tracker.ts` uses `sessionStorage` to track whether an unauthenticated user has generated components. This triggers a sign-up prompt so work isn't lost on navigation.
 
 ## Testing
 
